@@ -1,0 +1,14 @@
+{
+  "name": "hellper",
+  "version": "1.0.5",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "__npminstall_done": "Thu Aug 06 2020 11:01:16 GMT+0800 (GMT+08:00)",
+  "_from": "hellper@1.0.4",
+  "_resolved": "https://registry.npm.taobao.org/hellper/download/hellper-1.0.4.tgz"
+}
