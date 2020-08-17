@@ -4,9 +4,11 @@ class DomCheck {
   constructor() {
     this.inputErrorCount = 0;
     this.ellipsisErrorCount = 0;
+    this.errorList = [];
     this.timeInterval = '';
   }
 
+  // 启动
   checkDocument() {
     let app = document.getElementById('app');
     this.inputErrorCount = 0;
@@ -15,13 +17,14 @@ class DomCheck {
     // this.showError();
   }
 
+  // 节点递归
   findNodes(dom) {
     if (dom.children) {
-      let flag = this.identifyGoing(dom);
+      let flag = DomCheck.identifyGoing(dom);
       if (flag) {
         for (let i = 0; i < dom.children.length; i++) {
-          if (this.identifyDomType(dom.children[i])) {
-            if (this.identifyAttr(dom.children[i])) {
+          if (DomCheck.identifyDomType(dom.children[i])) {
+            if (DomCheck.identifyAttr(dom.children[i])) {
               this.markItem(dom.children[i], 'input');
             }
           }
@@ -39,10 +42,10 @@ class DomCheck {
 
   // 找有ellipsis 样式的节点
   identifyEllipsisDom(dom) {
-    let clazz = this.getAttr(dom, 'class');
+    let clazz = DomCheck.getAttr(dom, 'class');
     let childs = dom.children;
     let childrenHasTooltip = false;
-    if (!(this.getCss(dom, 'textOverflow') === 'ellipsis')) {
+    if (!(DomCheck.getCss(dom, 'textOverflow') === 'ellipsis')) {
       return false;
     }
     if (dom.nodeName === 'TH' || dom.nodeName === 'TD') {
@@ -54,40 +57,51 @@ class DomCheck {
     if ((clazz && (clazz.includes('yl-tooltip') || clazz.includes('cell')))) {
       return false;
     }
-    for(let i=0;i<childs.length;i++){
-      let _class = this.getAttr(childs[i], 'class');
+    for (let i = 0; i < childs.length; i++) {
+      let _class = DomCheck.getAttr(childs[i], 'class');
       if (_class && _class.includes('yl-tooltip')) {
         childrenHasTooltip = true;
       }
     }
-    if (childrenHasTooltip) {
-      return  false
-    }
+    return !childrenHasTooltip;
 
-    return true;
+
   }
+
   // 查询3级节点是否有title属性
   identifyTitle(dom) {
-    const parentDom = dom.parentNode;
-    const grandpaDom = dom.parentNode.parentNode;
-    if (this.getAttr(dom, 'title') || this.getAttr(parentDom, 'title') || this.getAttr(grandpaDom, 'title')) {
+    const parentNode = dom.parentNode; // 父节点
+    const grandpaNode = dom.parentNode.parentNode; // 祖节点
+    const childNodes = dom.childNodes; // 子节点
+    if (DomCheck.getAttr(dom, 'title') || DomCheck.getAttr(parentNode, 'title') || DomCheck.getAttr(grandpaNode, 'title')) {
       return false;
+    }
+    let childTitle = false;
+    for (let i = 0; i < childNodes.length; i++) {
+      if (DomCheck.getAttr(childNodes[i], 'title')) {
+        return false;
+      }
     }
     return true;
   }
+
   // 返回节点样式
-  getCss(dom, key) {
-    return getComputedStyle(dom, null)[key]
+  static getCss(dom, key) {
+    return getComputedStyle(dom, null)[key];
   }
 
   // 取元素属性
-  getAttr(dom, target) {
-    return dom ? dom.getAttribute(target) : '';
+  static getAttr(dom, target) {
+    try {
+      return dom ? dom.getAttribute(target) : '';
+    } catch (e) {
+    }
+    return '';
   }
 
   // 是否向下查询
-  identifyGoing(dom) {
-    let clazz = this.getAttr(dom, 'class');
+  static identifyGoing(dom) {
+    let clazz = DomCheck.getAttr(dom, 'class');
     // yl-select 不查询 // 日期选择不查
     if (clazz) {
       if (clazz.includes('yl-select') || clazz.includes('yl-select-dropdown') || clazz.includes('yl-date-editor')) {
@@ -104,24 +118,24 @@ class DomCheck {
   }
 
   // 查询对应节点
-  identifyDomType(dom) {
-    if (dom.localName === 'input' && this.getAttr(dom, 'class') && this.getAttr(dom, 'class').includes('yl-input__inner')) {
+  static identifyDomType(dom) {
+    if (dom.localName === 'input' && DomCheck.getAttr(dom, 'class') && DomCheck.getAttr(dom, 'class').includes('yl-input__inner')) {
       return true;
     }
   }
 
   // 是否错误节点
-  identifyAttr(dom) {
-    if (this.getAttr(dom, 'type') === 'number') {
-      if (this.getAttr(dom, 'min') && this.getAttr(dom, 'max')) {
+  static identifyAttr(dom) {
+    if (DomCheck.getAttr(dom, 'type') === 'number') {
+      if (DomCheck.getAttr(dom, 'min') && DomCheck.getAttr(dom, 'max')) {
         return false;
       }
     }
-    if (this.getAttr(dom, 'disabled')) {
+    if (DomCheck.getAttr(dom, 'disabled')) {
       return false;
     }
 
-    if (this.getAttr(dom, 'maxlength') || this.getAttr(dom, 'min') && this.getAttr(dom, 'max')) {
+    if (DomCheck.getAttr(dom, 'maxlength') || DomCheck.getAttr(dom, 'min') && DomCheck.getAttr(dom, 'max')) {
       return false;
     }
 
@@ -130,12 +144,18 @@ class DomCheck {
 
   // 标记错误节点
   markItem(dom, key) {
-    let text = key === 'input' ? '无maxlength/max属性' : '无title属性';
-    console.log(`%c问题节点(${text})：`,'color:#E14A9F', dom);
+    const domString = dom.outerHTML.replace(/\s*/g, '').replace('style="background:pink;"', '').replace('background:pink;', '');
+    if (!this.errorList.find(x => x === domString)) {
+      const text = key === 'input' ? '无maxlength/max属性' : '无title属性';
+      console.log('%c路由：', 'color:#E14A9F', `${window.location.pathname}\n`);
+      console.log(`%c节点：`, 'color:#E14A9F', text, dom);
+      this[`${key}ErrorCount`]++;
+      this.errorList.push(domString);
+    }
     dom.style.background = 'pink';
-    this[`${key}ErrorCount`]++;
   }
 
+  // 显示错误提示
   showError() {
     clearInterval(this.timeInterval);
     this.timeInterval = setTimeout(() => {
@@ -149,7 +169,7 @@ class DomCheck {
   }
 }
 
-/* 浏览器检测*/
+/* 路由长度检测*/
 class urlCheck {
   constructor() {
     this.oldUrl = '';
@@ -158,21 +178,21 @@ class urlCheck {
   checkChange() {
     if (!this.oldUrl) {
       this.oldUrl = window.location.href;
-      this.doCheck();
+      urlCheck.doCheck();
     } else {
       if (this.oldUrl !== window.location.href) {
         this.oldUrl = window.location.href;
-        this.doCheck();
+        urlCheck.doCheck();
       }
     }
   }
 
-  doCheck() {
-    this.checkLength();
+  static doCheck() {
+    urlCheck.checkLength();
   }
 
   //长度检测
-  checkLength() {
+  static checkLength() {
     let location = window.location;
     if (location.href && location.href.length > 4000) {
       console.log('%c' + 'url长度超长建议优化,url如下：', 'color:#E14A9F');
@@ -189,12 +209,11 @@ const check = new DomCheck();
 
 let mutationTime = null;
 // 监听页面元素变化
-const mutationCallback = () => {
-  clearTimeout(mutationTime);
+const mutationCallback = (mutationsList, observer) => {
   mutationTime = setTimeout(() => {
     check.checkDocument();
     checkUrl.checkChange();
-  }, 1500)
+  }, 1500);
 
 };
 
@@ -209,7 +228,7 @@ function handleCheck() {
     check.checkDocument();
     checkUrl.checkChange();
 
-  }, 2000);
+  }, 1000);
 }
 
 module.exports = {
