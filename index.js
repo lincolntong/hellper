@@ -1,6 +1,7 @@
 const {CheckFolder} = require('./fileNameCheck');
 const {magicText} = require('./magicText');
 const {domCheck} = require('./domCheck');
+const {HttpListen} = require('./httpListen');
 
 // npm run check 执行
 if (process.argv && process.argv.length) {
@@ -20,5 +21,6 @@ function hellper(config = {}) {
 }
 
 module.exports = {
-  hellper
+  hellper,
+  HttpListen
 };
