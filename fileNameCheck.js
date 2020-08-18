@@ -87,6 +87,7 @@ class CheckFolder {
   matchIgnore(url) {
     let isIgn = false;
     if (url) {
+      url = formatSplit(url);
       ingoreDir.map(item => {
         if (url.includes(item)) {
           isIgn = true;
@@ -97,9 +98,12 @@ class CheckFolder {
   }
 }
 
+const formatSplit = item => item.replace(dirname, '').replace(/\\/g, '*').replace(/\*/g, '/');
+
 const format = arr => arr && arr.length ? arr.map(item => {
-  return item.replace(dirname, '').replace(/\\/g, '*').replace(/\*/g, '/');
+  return formatSplit(item);
 }) : [];
+
 
 function check() {
   const check = new CheckFolder();
