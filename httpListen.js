@@ -1,3 +1,5 @@
+const config = require('../../hellper.config.js');
+
 class HttpListen {
   constructor() {
     this.reqArr = [];
@@ -6,6 +8,9 @@ class HttpListen {
 
   listen(req) {
     if (!isDev()) {
+      return;
+    }
+    if (config && ! config.check) {
       return;
     }
     const now = new Date().getTime();
