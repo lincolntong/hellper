@@ -3,6 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const config = require('../../hellper.config.js');
+
 // 文件夹名称带 . 不检测  只检测 .js, .vue
 let ingoreDir = ['node_modules', 'dist'];
 
@@ -17,7 +19,6 @@ const link = (dir, name) => path.resolve(dir, name);
 const exists = (path) => fs.existsSync(path);
 
 const isDir = (path) => exists(path) && fs.statSync(path).isDirectory();
-
 
 class CheckFolder {
   constructor() {
@@ -59,13 +60,12 @@ class CheckFolder {
   }
 
   show() {
+    var defpath = __dirname.split('node_modules')[0];
+
     CheckFolder.getIgnore();
     this.Check(dirname, true);
     const dir = format(this.errDir);
     const file = format(this.errFile);
-    /*if (ingoreDir && ingoreDir.length) {
-      console.log('被忽略的文件夹：', ingoreDir);
-    }*/
     if (dir.length) {
       console.log('文件夹名称格式错误：', dir);
     }
@@ -76,9 +76,8 @@ class CheckFolder {
 
   static getIgnore() {
     try {
-      const _link = path.resolve(dirname, '.namecheckignore');
-      const _file = fs.readFileSync(_link, 'utf-8');
-      ingoreDir = [...ingoreDir, ..._file.split('\r\n').filter(x => !!x)];
+      let addArr = config && config.nameCheckIgnore;
+      ingoreDir = [...ingoreDir, ...addArr];
     } catch (e) {
       console.log(e);
     }
@@ -87,7 +86,7 @@ class CheckFolder {
   matchIgnore(url) {
     let isIgn = false;
     if (url) {
-      url = formatSplit(url);
+      url = formatStr(url);
       ingoreDir.map(item => {
         if (url.includes(item)) {
           isIgn = true;
@@ -98,20 +97,18 @@ class CheckFolder {
   }
 }
 
-const formatSplit = item => item.replace(dirname, '').replace(/\\/g, '*').replace(/\*/g, '/');
-
 const format = arr => arr && arr.length ? arr.map(item => {
-  return formatSplit(item);
+  return formatStr(item);
 }) : [];
 
+const formatStr = str => str.replace(dirname, '').replace(/\\/g, '*').replace(/\*/g, '/');
 
 function check() {
   const check = new CheckFolder();
   check.show();
 }
 
-check();
-
 module.exports = {
-  CheckFolder: CheckFolder
+  CheckFolder: CheckFolder,
+  check: check
 };

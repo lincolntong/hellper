@@ -17,7 +17,7 @@ var TextMagic = function (open) {
       }
       var e = e || window.event;
       if (e.button == "2") {
-        console.log('e:', e);
+        // console.log('e:', e);
 
         this.event = e;
         this.handleText(e.target);
@@ -49,6 +49,9 @@ var TextMagic = function (open) {
           if (innerText) {
             var newText = this.event.altKey ? this.getLongText(innerText) : (innerText + innerText);
             target.innerHTML = newText;
+          }
+          if (target.nodeName === 'INPUT') {
+            target.placeholder = target.placeholder + target.placeholder;
           }
         }
       }
