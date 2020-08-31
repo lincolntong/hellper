@@ -1,4 +1,5 @@
 const {HttpListen} = require('./httpListen');
+const config = require('../../hellper.config.js');
 
 // npm run check 执行
 if (process.argv && process.argv.length) {
@@ -8,12 +9,12 @@ if (process.argv && process.argv.length) {
 } else { // 项目运行
   const {magicText} = require('./magicText');
   const {domCheck} = require('./domCheck');
-  function hellper(config = {}) {
+  function hellper() {
     if (isDev()) {
-      if (config.check) {
+      if (config && config.check) {
         domCheck();
       }
-      if (config.magic) {
+      if (config && config.magic) {
         magicText(true);
       }
     }
