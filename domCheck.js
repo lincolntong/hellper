@@ -7,7 +7,7 @@ class DomCheck {
     this.errorList = [];
     this.timeInterval = '';
   }
-
+  
   // 启动
   checkDocument() {
     let app = document.getElementById('app');
@@ -16,7 +16,7 @@ class DomCheck {
     this.findNodes(app);
     // this.showError();
   }
-
+  
   // 节点递归
   findNodes(dom) {
     if (dom.children) {
@@ -28,7 +28,7 @@ class DomCheck {
               this.markItem(dom.children[i], 'input');
             }
           }
-
+          
           if (this.identifyEllipsisDom(dom.children[i])) {
             if (this.identifyTitle(dom.children[i])) {
               this.markItem(dom.children[i], 'ellipsis');
@@ -39,7 +39,7 @@ class DomCheck {
       }
     }
   }
-
+  
   // 找有ellipsis 样式的节点
   identifyEllipsisDom(dom) {
     let clazz = this.getAttr(dom, 'class');
@@ -57,7 +57,8 @@ class DomCheck {
     if ((clazz && (clazz.includes('yl-tooltip') ||   // tooltip
       clazz.includes('cell') ||  // table-can
       clazz.includes('table-info_label') || clazz.includes('table-info_value') ||// table-info
-      clazz.includes('table-info_label')
+      clazz.includes('table-info_label') ||
+      clazz.includes('un_check')
     ))) {
       return false;
     }
@@ -69,29 +70,30 @@ class DomCheck {
     }
     return !childrenHasTooltip;
   }
-
+  
   // 查询3级节点是否有title属性
   identifyTitle(dom) {
     const parentNode = dom.parentNode; // 父节点
     const grandpaNode = dom.parentNode.parentNode; // 祖节点
     const childNodes = dom.childNodes; // 子节点
-    if (this.getAttr(dom, 'title') || this.getAttr(parentNode, 'title') || this.getAttr(grandpaNode, 'title')) {
+    if (this.getAttrKey(dom, 'title') || this.getAttrKey(parentNode, 'title') || this.getAttrKey(grandpaNode, 'title')) {
+      
       return false;
     }
     let childTitle = false;
     for (let i = 0; i < childNodes.length; i++) {
-      if (this.getAttr(childNodes[i], 'title')) {
+      if (this.getAttrKey(childNodes[i], 'title')) {
         return false;
       }
     }
     return true;
   }
-
+  
   // 返回节点样式
   getCss(dom, key) {
     return getComputedStyle(dom, null)[key];
   }
-
+  
   // 取元素属性
   getAttr(dom, target) {
     try {
@@ -100,11 +102,16 @@ class DomCheck {
     }
     return '';
   }
-
+  
+  // 判断节点属性是否存在
+  getAttrKey(dom, target) {
+    return !!(dom && dom.attributes && dom.attributes[target]);
+  }
+  
   // 是否向下查询
   identifyGoing(dom) {
-    const filterArr = ['yl-select', 'ignore_check'];
-
+    const filterArr = ['yl-select', 'ignore_check', 'un_check'];
+    
     let clazz = this.getAttr(dom, 'class');
     clazz = clazz ? clazz.split(' ') : '';
     if (this.includesItem(clazz, filterArr)) { // 忽略dom及其子dom
@@ -112,14 +119,14 @@ class DomCheck {
     }
     return true;
   }
-
+  
   // input 节点过滤
   identifyInputDom(dom) {
     const parentNode = dom.parentNode; // 父节点
     const grandpaNode = dom.parentNode.parentNode; // 爷节点
     const grandgrandpaNode = dom.parentNode.parentNode.parentNode; // 祖节点
     const domArr = [parentNode, grandpaNode, grandgrandpaNode];
-    const filterArr = ['yl-select', 'yl-select-dropdown', 'yl-date-editor'];
+    const filterArr = ['yl-select', 'yl-select-dropdown', 'yl-date-editor', 'un_check'];
     let getClass = false;
     if (dom.localName === 'input' && this.identifyClass(dom, 'yl-input__inner')) {
       domArr.map(item => {
@@ -132,20 +139,20 @@ class DomCheck {
       return !getClass;
     }
   }
-
+  
   // 查询 前一个数组，是否包含后一个数组中的其中一个值
   includesItem(arr, filterArr) {
     if (!arr) {
-      return  false;
+      return false;
     }
-    return !!arr && (arr.concat(filterArr)).sort().find((x, index, arr) => x === arr[index+1])
+    return !!arr && (arr.concat(filterArr)).sort().find((x, index, arr) => x === arr[index + 1])
   }
-
-
+  
+  
   identifyClass(dom, clazz) {
     return this.getAttr(dom, 'class') && this.getAttr(dom, 'class').includes(clazz)
   }
-
+  
   // 是否错误节点
   identifyAttr(dom) {
     if (this.getAttr(dom, 'type') === 'number') {
@@ -156,21 +163,18 @@ class DomCheck {
     if (this.getAttr(dom, 'disabled')) { // disabled
       return false;
     }
-
+    
     if (this.getAttr(dom, 'maxlength') || this.getAttr(dom, 'min') && this.getAttr(dom, 'max')) {
       return false;
     }
-
+    
     return true;
   }
-
+  
   // 标记错误节点
   markItem(dom, key) {
     const text = key === 'input' ? '无maxlength/max属性' : '无title属性';
-    const domString = dom.outerHTML.replace(/\s*/g, '').
-    replace('style="background:pink;"', '').
-    replace(`title="${text}"`, '').
-    replace('background:pink;', '');
+    const domString = dom.outerHTML.replace(/\s*/g, '').replace('style="background:pink;"', '').replace(`title="${text}"`, '').replace('background:pink;', '');
     if (!this.errorList.find(x => x === domString)) {
       console.log('%c路由：', 'color:#E14A9F', `${window.location.pathname}\n`);
       console.log(`%c节点：`, 'color:#E14A9F', text, dom);
@@ -178,10 +182,10 @@ class DomCheck {
       this.errorList.push(domString);
     }
     dom.style.background = 'pink';
-    dom.title =  text ;
-    dom.mark =  text ;
+    dom.title = text;
+    dom.mark = text;
   }
-
+  
   // 显示错误提示
   showError() {
     clearInterval(this.timeInterval);
@@ -201,7 +205,7 @@ class urlCheck {
   constructor() {
     this.oldUrl = '';
   }
-
+  
   checkChange() {
     if (!this.oldUrl) {
       this.oldUrl = window.location.href;
@@ -213,11 +217,11 @@ class urlCheck {
       }
     }
   }
-
+  
   doCheck() {
     this.checkLength();
   }
-
+  
   //长度检测
   checkLength() {
     let location = window.location;
@@ -241,7 +245,7 @@ const mutationCallback = (mutationsList, observer) => {
     check.checkDocument();
     checkUrl.checkChange();
   }, 2000);
-
+  
 };
 
 const config = {childList: true, subtree: true};
@@ -253,7 +257,7 @@ function handleCheck() {
     observer.observe(document, config);
     check.checkDocument();
     checkUrl.checkChange();
-
+    
   }, 2000);
 }
 
